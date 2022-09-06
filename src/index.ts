@@ -83,7 +83,9 @@ export class AirThingsApi {
 
     async updateToken() {
         const client = new ClientCredentials(this.config)
-        this.accessToken = await client.getToken({scope: 'read:device:current_value'}).catch((reason: any) => {
+        this.accessToken = await client.getToken({scope: 'read:device:current_value'}).then((value: AccessToken) => {
+            return value
+        }).catch((reason: any) => {
             console.error(reason)
             throw new Error(`airthings-api Token error: ${reason}`)
         })
