@@ -18,7 +18,7 @@ export class AirThingsApi {
             },
             auth: {
                 tokenHost: 'https://accounts.airthings.com',
-                tokenPath: 'https:/=accounts-api.airthings.com/v1/token',
+                tokenPath: 'https:/accounts-api.airthings.com/v1/token',
                 authorizePath: '/authorize',
             },
             options: {
@@ -34,7 +34,7 @@ export class AirThingsApi {
             await this.updateToken()
         }
 
-        return await axios.get('https://api.airthings.com/v1/devices', {
+        return await axios.get('https://ext-api.airthings.com/v1/devices', {
             headers: {
                 Authorization: `Bearer ${this.accessToken!.token.access_token}`
             },
@@ -51,7 +51,7 @@ export class AirThingsApi {
             await this.updateToken()
         }
 
-        return await axios.get(`https://api.airthings.com/v1/devices/${deviceId}`, {
+        return await axios.get(`https://ext-api.airthings.com/v1/devices/${deviceId}`, {
             headers: {
                 Authorization: `Bearer ${this.accessToken!.token.access_token}`
             },
