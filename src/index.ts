@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from 'axios'
+import axios, { AxiosError, AxiosResponse } from 'axios'
 import { AccessToken, ClientCredentials, ModuleOptions } from 'simple-oauth2'
 
 export interface AirThingsConfiguration {
@@ -112,11 +112,8 @@ export class AirThingsApi {
 			.then((value: AxiosResponse<{ devices: Device[] }>) => {
 				return value.data.devices
 			})
-			.catch((reason) => {
-				console.error(reason)
-				throw new Error(
-					`airthings-api error: ${JSON.stringify(reason)}`,
-				)
+			.catch((error: Error | AxiosError) => {
+				throw this.getError(error)
 			})
 	}
 
@@ -141,11 +138,8 @@ export class AirThingsApi {
 			.then((value: AxiosResponse) => {
 				return value.data as Device
 			})
-			.catch((reason) => {
-				console.error(reason)
-				throw new Error(
-					`airthings-api error: ${JSON.stringify(reason)}`,
-				)
+			.catch((error: Error | AxiosError) => {
+				throw this.getError(error)
 			})
 	}
 
@@ -173,11 +167,8 @@ export class AirThingsApi {
 			.then((value: AxiosResponse<{ data: Readings }>) => {
 				return value.data.data
 			})
-			.catch((reason) => {
-				console.error(reason)
-				throw new Error(
-					`airthings-api error: ${JSON.stringify(reason)}`,
-				)
+			.catch((error: Error | AxiosError) => {
+				throw this.getError(error)
 			})
 	}
 
@@ -191,11 +182,19 @@ export class AirThingsApi {
 			.then((value: AccessToken) => {
 				return value
 			})
-			.catch((reason) => {
-				console.error(reason)
-				throw new Error(
-					`airthings-api error: ${JSON.stringify(reason)}`,
-				)
+			.catch((error: Error | AxiosError) => {
+				throw this.getError(error)
 			})
+	}
+
+	private getError(error: Error | AxiosError): Error {
+		if (axios.isAxiosError(error)) {
+			const e = error.toJSON()
+			console.error(e)
+			return new Error(`airthings-api error: ${JSON.stringify(e)}`)
+		} else {
+			console.error(error)
+			return new Error(`airthings-api error: ${error.message}`)
+		}
 	}
 }
