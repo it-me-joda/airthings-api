@@ -6,6 +6,70 @@ export interface AirThingsConfiguration {
     secret: string;
 }
 
+export interface Device {
+    id: string;
+    deviceType: string;
+    sensors: string[];
+    segment: {
+        id: string;
+        name: string;
+        started: string;
+        active: boolean;
+    };
+    location: {
+        id: string;
+        name: string;
+    };
+}
+
+export interface Readings {
+    battery: number;
+    co2: number;
+    humidity: number;
+    light: number;
+    lux: number;
+    mold: number;
+    pm1: number;
+    pm10: number;
+    pm25: number;
+    pressure: number;
+    pressureDifference: number;
+    radonShortTermAvg: number;
+    rssi: number;
+    sla: number;
+    temp: number;
+    time: number;
+    virusRisk: number;
+    voc: number;
+    outdoorTemp: number;
+    outdoorHumidity: number;
+    outdoorPressure: number;
+    outdoorPm1: number;
+    outdoorPm10: number;
+    outdoorPm25: number;
+    outdoorNo2: number;
+    outdoorO3: number;
+    outdoorSo2: number;
+    outdoorCo: number;
+    outdoorNo: number;
+    controlSignal: number;
+    controlSignal01: number;
+    controlSignal02: number;
+    controlSignal03: number;
+    controlSignal04: number;
+    controlSignal05: number;
+    controlSignal06: number;
+    controlSignal07: number;
+    controlSignal08: number;
+    regulationPressure: number;
+    regulationHeigh: number;
+    relayDeviceType: string;
+
+}
+
+/**
+ * AirThings API client for Node.js
+ */
 export class AirThingsApi {
     private config: ModuleOptions<'client_id'>
     private accessToken: AccessToken | null
@@ -29,7 +93,11 @@ export class AirThingsApi {
         this.accessToken = null
     }
 
-    public async getDeviceList() {
+    /**
+     * Gets all devices for the authenticated user 
+     * @returns {Device[]}
+     */
+    public async getDeviceList(): Promise<Device[]> {
         if (!this.accessToken || this.accessToken.expired()) {
             await this.updateToken()
         }
@@ -39,14 +107,19 @@ export class AirThingsApi {
                 Authorization: `Bearer ${this.accessToken!.token.access_token}`
             },
         }).then((value: AxiosResponse) => {
-            return value.data.devices
+            return value.data.devices as Device[]
         }).catch((reason: any) => {
             console.error(reason)
             throw new Error(`airthings-api error: ${reason}`)
         })
     }
 
-    public async getDevice(deviceId: string) {
+    /**
+     * Gets a device by its id/serial number
+     * @param {string} deviceId
+     * @returns {Device}
+     */
+    public async getDevice(deviceId: string): Promise<Device> {
         if (!this.accessToken || this.accessToken.expired()) {
             await this.updateToken()
         }
@@ -56,7 +129,7 @@ export class AirThingsApi {
                 Authorization: `Bearer ${this.accessToken!.token.access_token}`
             },
         }).then((value: AxiosResponse) => {
-            return value.data
+            return value.data as Device
         }).catch((reason: any) => {
             console.error(reason)
             throw new Error(`airthings-api error: ${reason}`)
@@ -64,7 +137,12 @@ export class AirThingsApi {
     
     }
 
-    public async getDeviceSamples(deviceId: string) {
+    /**
+     * Gets the latest readings for a device
+     * @param {string} deviceId
+     * @returns {Readings}
+     */
+    public async getDeviceSamples(deviceId: string): Promise<Readings> {
         if (!this.accessToken || this.accessToken.expired()) {
             await this.updateToken()
         }
@@ -74,14 +152,17 @@ export class AirThingsApi {
                 Authorization: `Bearer ${this.accessToken!.token.access_token}`,
             },
         }).then((value: any) => {
-            return value.data.data
+            return value.data.data as Readings
         }).catch((reason: any) => {
             console.error(reason)
             throw new Error(`airthings-api error: ${reason}`)
         })
     }
 
-    private async updateToken() {
+    /**
+     * Gets the access token from the API
+     */
+    private async updateToken(): Promise<void> {
         const client = new ClientCredentials(this.config)
         this.accessToken = await client.getToken({scope: 'read:device:current_value'}).then((value: AccessToken) => {
             return value
