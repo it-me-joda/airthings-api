@@ -7,8 +7,8 @@ export interface AirThingsConfiguration {
 }
 
 export class AirThingsApi {
-    config: ModuleOptions<'client_id'>
-    accessToken: AccessToken | null
+    private config: ModuleOptions<'client_id'>
+    private accessToken: AccessToken | null
 
     constructor(configuration: AirThingsConfiguration) {
         this.config = {
@@ -81,7 +81,7 @@ export class AirThingsApi {
         })
     }
 
-    async updateToken() {
+    private async updateToken() {
         const client = new ClientCredentials(this.config)
         this.accessToken = await client.getToken({scope: 'read:device:current_value'}).then((value: AccessToken) => {
             return value
