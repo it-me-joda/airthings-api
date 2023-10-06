@@ -1,73 +1,9 @@
-export interface AirThingsConfiguration {
-	id: string
-	secret: string
-}
-
-export interface AccessToken {
-	token: string
-	type: string
-	expiresAt: number
-}
-
-export interface Device {
-	id: string
-	deviceType: string
-	sensors: string[]
-	segment: {
-		id: string
-		name: string
-		started: string
-		active: boolean
-	}
-	location: {
-		id: string
-		name: string
-	}
-}
-
-export interface Readings {
-	battery: number
-	co2: number
-	humidity: number
-	light: number
-	lux: number
-	mold: number
-	pm1: number
-	pm10: number
-	pm25: number
-	pressure: number
-	pressureDifference: number
-	radonShortTermAvg: number
-	rssi: number
-	sla: number
-	temp: number
-	time: number
-	virusRisk: number
-	voc: number
-	outdoorTemp: number
-	outdoorHumidity: number
-	outdoorPressure: number
-	outdoorPm1: number
-	outdoorPm10: number
-	outdoorPm25: number
-	outdoorNo2: number
-	outdoorO3: number
-	outdoorSo2: number
-	outdoorCo: number
-	outdoorNo: number
-	controlSignal: number
-	controlSignal01: number
-	controlSignal02: number
-	controlSignal03: number
-	controlSignal04: number
-	controlSignal05: number
-	controlSignal06: number
-	controlSignal07: number
-	controlSignal08: number
-	regulationPressure: number
-	regulationHeigh: number
-	relayDeviceType: string
-}
+import {
+	AccessToken,
+	AirThingsConfiguration,
+	Device,
+	Readings,
+} from './interfaces/'
 
 /**
  * AirThings API client for Node.js
@@ -93,11 +29,15 @@ export class AirThingsApi {
 			headers: {
 				Authorization: `Bearer ${this.accessToken.token}`,
 			},
-		}).then(async (response) => {
-			return await response.json().then((value) => {return value.devices as Device[]})
-		}).catch(error => {
-			throw this.getError(error)
 		})
+			.then(async (response) => {
+				return await response.json().then((value) => {
+					return value.devices as Device[]
+				})
+			})
+			.catch((error) => {
+				throw this.getError(error)
+			})
 	}
 
 	/**
@@ -109,16 +49,20 @@ export class AirThingsApi {
 		if (this.isTokenExpired()) await this.updateToken()
 		if (!this.accessToken) throw new Error('No access token')
 
-
-		return await fetch(`https://ext-api.airthings.com/v1/devices/${deviceId}`, {
-			headers: {
-				Authorization: `Bearer ${this.accessToken.token}`,
+		return await fetch(
+			`https://ext-api.airthings.com/v1/devices/${deviceId}`,
+			{
+				headers: {
+					Authorization: `Bearer ${this.accessToken.token}`,
+				},
 			},
-		}).then(async (response) => {
-			return await response.json() as Device
-		}).catch(error => {
-			throw this.getError(error)
-		})
+		)
+			.then(async (response) => {
+				return (await response.json()) as Device
+			})
+			.catch((error) => {
+				throw this.getError(error)
+			})
 	}
 
 	/**
@@ -130,15 +74,20 @@ export class AirThingsApi {
 		if (this.isTokenExpired()) await this.updateToken()
 		if (!this.accessToken) throw new Error('No access token')
 
-		return await fetch(`https://ext-api.airthings.com/v1/devices/${deviceId}/latest-samples`, {
-			headers: {
-				Authorization: `Bearer ${this.accessToken.token}`,
+		return await fetch(
+			`https://ext-api.airthings.com/v1/devices/${deviceId}/latest-samples`,
+			{
+				headers: {
+					Authorization: `Bearer ${this.accessToken.token}`,
+				},
 			},
-		}).then(async (res: Response) => {
-			return JSON.parse(await res.text()) as Readings
-		}).catch((error: any) => {
-			throw this.getError(error)
-		})
+		)
+			.then(async (res: Response) => {
+				return JSON.parse(await res.text()) as Readings
+			})
+			.catch((error: any) => {
+				throw this.getError(error)
+			})
 	}
 
 	/**
@@ -159,27 +108,33 @@ export class AirThingsApi {
 			grant_type: 'client_credentials',
 		})
 
-		const authorization = Buffer.from(`${this.config.id}:${this.config.secret}`).toString('base64')
-		this.accessToken = await fetch(`https://accounts-api.airthings.com/v1/token`, {
-			method: 'POST',
-			headers: {
-				'Authorization': `Basic ${authorization}`,
-				'content-type': 'application/json',
+		const authorization = Buffer.from(
+			`${this.config.id}:${this.config.secret}`,
+		).toString('base64')
+		this.accessToken = await fetch(
+			`https://accounts-api.airthings.com/v1/token`,
+			{
+				method: 'POST',
+				headers: {
+					'Authorization': `Basic ${authorization}`,
+					'content-type': 'application/json',
+				},
+				body: body,
 			},
-			body: body,
-		}).then(async (res: Response) => {
-			const data = JSON.parse(await res.text())
-			const token: AccessToken = {
-				token: data.access_token,
-				type: data.token_type,
-				expiresAt: data.expires_in + Date.now()
-			}
-			return token
-		}).catch((error: any) => {
-			throw this.getError(error)
-		})
+		)
+			.then(async (res: Response) => {
+				const data = JSON.parse(await res.text())
+				const token: AccessToken = {
+					token: data.access_token,
+					type: data.token_type,
+					expiresAt: data.expires_in + Date.now(),
+				}
+				return token
+			})
+			.catch((error: any) => {
+				throw this.getError(error)
+			})
 	}
-
 
 	private getError(error: Error): Error {
 		console.log(error)
