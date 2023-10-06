@@ -1,5 +1,3 @@
-import axios, { AxiosError, AxiosResponse } from 'axios'
-
 export interface AirThingsConfiguration {
 	id: string
 	secret: string
@@ -91,18 +89,15 @@ export class AirThingsApi {
 		if (this.isTokenExpired()) await this.updateToken()
 		if (!this.accessToken) throw new Error('No access token')
 
-		return await axios
-			.get('https://ext-api.airthings.com/v1/devices', {
-				headers: {
-					Authorization: `Bearer ${this.accessToken.token}`,
-				},
-			})
-			.then((value: AxiosResponse<{ devices: Device[] }>) => {
-				return value.data.devices
-			})
-			.catch((error: Error | AxiosError) => {
-				throw this.getError(error)
-			})
+		return await fetch('https://ext-api.airthings.com/v1/devices', {
+			headers: {
+				Authorization: `Bearer ${this.accessToken.token}`,
+			},
+		}).then(async (response) => {
+			return await response.json().then((value) => {return value.devices as Device[]})
+		}).catch(error => {
+			throw this.getError(error)
+		})
 	}
 
 	/**
@@ -114,18 +109,16 @@ export class AirThingsApi {
 		if (this.isTokenExpired()) await this.updateToken()
 		if (!this.accessToken) throw new Error('No access token')
 
-		return await axios
-			.get(`https://ext-api.airthings.com/v1/devices/${deviceId}`, {
-				headers: {
-					Authorization: `Bearer ${this.accessToken.token}`
-				},
-			})
-			.then((value: AxiosResponse) => {
-				return value.data as Device
-			})
-			.catch((error: Error | AxiosError) => {
-				throw this.getError(error)
-			})
+
+		return await fetch(`https://ext-api.airthings.com/v1/devices/${deviceId}`, {
+			headers: {
+				Authorization: `Bearer ${this.accessToken.token}`,
+			},
+		}).then(async (response) => {
+			return await response.json() as Device
+		}).catch(error => {
+			throw this.getError(error)
+		})
 	}
 
 	/**
@@ -137,21 +130,15 @@ export class AirThingsApi {
 		if (this.isTokenExpired()) await this.updateToken()
 		if (!this.accessToken) throw new Error('No access token')
 
-		return await axios
-			.get(
-				`https://ext-api.airthings.com/v1/devices/${deviceId}/latest-samples`,
-				{
-					headers: {
-						Authorization: `Bearer ${this.accessToken.token}`,
-					},
-				},
-			)
-			.then((value: AxiosResponse<{ data: Readings }>) => {
-				return value.data.data
-			})
-			.catch((error: Error | AxiosError) => {
-				throw this.getError(error)
-			})
+		return await fetch(`https://ext-api.airthings.com/v1/devices/${deviceId}/latest-samples`, {
+			headers: {
+				Authorization: `Bearer ${this.accessToken.token}`,
+			},
+		}).then(async (res: Response) => {
+			return JSON.parse(await res.text()) as Readings
+		}).catch((error: any) => {
+			throw this.getError(error)
+		})
 	}
 
 	/**
@@ -172,38 +159,30 @@ export class AirThingsApi {
 			grant_type: 'client_credentials',
 		})
 
-		this.accessToken = await axios.post('https://accounts-api.airthings.com/v1/token', body, {
+		const authorization = Buffer.from(`${this.config.id}:${this.config.secret}`).toString('base64')
+		this.accessToken = await fetch(`https://accounts-api.airthings.com/v1/token`, {
+			method: 'POST',
 			headers: {
-				'Authorization': `Basic ${Buffer.from(`${this.config.id}:${this.config.secret}`).toString('base64')}`,
+				'Authorization': `Basic ${authorization}`,
 				'content-type': 'application/json',
 			},
-		},
-		).then((value: AxiosResponse<{
-			access_token: string,
-			token_type: string,
-			expires_in: number,
-		}>) => {
-			console.log(value.data)
+			body: body,
+		}).then(async (res: Response) => {
+			const data = JSON.parse(await res.text())
 			const token: AccessToken = {
-				token: value.data.access_token,
-				type: value.data.token_type,
-				expiresAt: value.data.expires_in + Date.now(),
+				token: data.access_token,
+				type: data.token_type,
+				expiresAt: data.expires_in + Date.now()
 			}
 			return token
-		}).catch((error: Error | AxiosError) => {
+		}).catch((error: any) => {
 			throw this.getError(error)
 		})
 	}
 
 
-	private getError(error: Error | AxiosError): Error {
-		if (axios.isAxiosError(error)) {
-			const e = error.toJSON()
-			console.error(e)
-			return new Error(`airthings-api error: ${JSON.stringify(e)}`)
-		} else {
-			console.error(error)
-			return new Error(`airthings-api error: ${error.message}`)
-		}
+	private getError(error: Error): Error {
+		console.log(error)
+		return new Error(`airthings-api error: ${error.message}`)
 	}
 }
