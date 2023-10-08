@@ -1,4 +1,5 @@
 export type { AccessToken } from './access-token'
 export type { AirThingsConfiguration } from './airthings-configuration'
 export type { Device } from './device'
-export type { Readings } from './readings'
+export type { Samples } from './samples'
+export type { Location, LocationInfo, LocationSamples } from './location'

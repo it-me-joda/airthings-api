@@ -2,7 +2,10 @@ import {
 	AccessToken,
 	AirThingsConfiguration,
 	Device,
-	Readings,
+	Samples,
+	Location,
+	LocationInfo,
+	LocationSamples
 } from './interfaces/'
 
 /**
@@ -35,9 +38,7 @@ export class AirThingsApi {
 					return value.devices
 				})
 			})
-			.catch((error: { message: string }) => {
-				throw this.getError(error)
-			})
+			.catch((error: { message: string }) => { throw this.handleError(error) })
 	}
 
 	/**
@@ -60,17 +61,15 @@ export class AirThingsApi {
 			.then(async (res) => {
 				return (await res.json()) as Device
 			})
-			.catch((error: { message: string }) => {
-				throw this.getError(error)
-			})
+			.catch((error: { message: string }) => { throw this.handleError(error) })
 	}
 
 	/**
-	 * Gets the latest readings for a device
+	 * Gets the latest samples for a device
 	 * @param {string} deviceId
-	 * @returns {Readings}
+	 * @returns {Samples}
 	 */
-	public async getDeviceSamples(deviceId: string): Promise<Readings> {
+	public async getDeviceSamples(deviceId: string): Promise<Samples> {
 		if (this.isTokenExpired()) await this.updateToken()
 		if (!this.accessToken) throw new Error('No access token')
 
@@ -83,11 +82,77 @@ export class AirThingsApi {
 			},
 		)
 			.then(async (res) => {
-				return JSON.parse(await res.text()) as Readings
+				return JSON.parse(await res.text()) as Samples
 			})
-			.catch((error: { message: string }) => {
-				throw this.getError(error)
+			.catch((error: { message: string }) => { throw this.handleError(error) })
+	}
+
+	/**
+	 * Gets the full list of locations
+	 * @returns {Location[]}
+	 */
+	public async getLocations(): Promise<Location[]> {
+		if (this.isTokenExpired()) await this.updateToken()
+		if (!this.accessToken) throw new Error('No access token')
+
+		return await fetch(
+			'https://ext-api.airthings.com/v1/locations',
+			{
+				headers: {
+					Authorization: `Bearer ${this.accessToken.token}`
+				},
+			},
+		)
+			.then(async (res) => {
+				return res.json().then((value: { locations: Location[] }) => {
+					return value.locations
+				})
 			})
+			.catch((error: { message: string }) => { throw this.handleError(error) })
+	}
+
+	/**
+	 * Gets the location by it's id 
+	 * @returns LocationInfo
+	 */
+	public async getLocation(locationId: string): Promise<LocationInfo> {
+		if (this.isTokenExpired()) await this.updateToken()
+		if (!this.accessToken) throw new Error('No access token')
+
+		return await fetch(
+			`https://ext-api.airthings.com/v1/locations/${locationId}`,
+			{
+				headers: {
+					Authorization: `Bearer ${this.accessToken.token}`
+				},
+			},
+		)
+			.then(async (res) => {
+				return JSON.parse(await res.text()) as LocationInfo
+			})
+			.catch((error: { message: string }) => { throw this.handleError(error) })
+	}
+
+	/**
+	 * Gets the latest samples for all devices in a location
+	 * @returns {LocationReadings}
+	 */
+	public async getLocationSamples(locationId: string): Promise<LocationSamples> {
+		if (this.isTokenExpired()) await this.updateToken()
+		if (!this.accessToken) throw new Error('No access token')
+
+		return await fetch(
+			`https://ext-api.airthings.com/v1/locations/${locationId}/latest-samples`,
+			{
+				headers: {
+					Authorization: `Bearer ${this.accessToken.token}`
+				},
+			},
+		)
+			.then(async (res) => {
+				return JSON.parse(await res.text()) as LocationSamples
+			})
+			.catch((error: { message: string }) => { throw this.handleError(error) })
 	}
 
 	/**
@@ -135,12 +200,10 @@ export class AirThingsApi {
 				}
 				return token
 			})
-			.catch((error: { message: string }) => {
-				throw this.getError(error)
-			})
+			.catch((error: { message: string }) => { throw this.handleError(error) })
 	}
 
-	private getError(error: { message: string }): Error {
+	private handleError(error: { message: string }): Error {
 		console.log(error)
 		return new Error(`airthings-api error: ${error.message}`)
 	}
