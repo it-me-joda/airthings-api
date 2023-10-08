@@ -30,12 +30,12 @@ export class AirThingsApi {
 				Authorization: `Bearer ${this.accessToken.token}`,
 			},
 		})
-			.then(async (response) => {
-				return await response.json().then((value) => {
-					return value.devices as Device[]
+			.then(async (res) => {
+				return await res.json().then((value: { devices: Device[] }) => {
+					return value.devices
 				})
 			})
-			.catch((error) => {
+			.catch((error: { message: string }) => {
 				throw this.getError(error)
 			})
 	}
@@ -57,10 +57,10 @@ export class AirThingsApi {
 				},
 			},
 		)
-			.then(async (response) => {
-				return (await response.json()) as Device
+			.then(async (res) => {
+				return (await res.json()) as Device
 			})
-			.catch((error) => {
+			.catch((error: { message: string }) => {
 				throw this.getError(error)
 			})
 	}
@@ -82,10 +82,10 @@ export class AirThingsApi {
 				},
 			},
 		)
-			.then(async (res: Response) => {
+			.then(async (res) => {
 				return JSON.parse(await res.text()) as Readings
 			})
-			.catch((error: any) => {
+			.catch((error: { message: string }) => {
 				throw this.getError(error)
 			})
 	}
@@ -122,8 +122,12 @@ export class AirThingsApi {
 				body: body,
 			},
 		)
-			.then(async (res: Response) => {
-				const data = JSON.parse(await res.text())
+			.then(async (res) => {
+				const data = JSON.parse(await res.text()) as {
+					access_token: string
+					token_type: string
+					expires_in: number
+				}
 				const token: AccessToken = {
 					token: data.access_token,
 					type: data.token_type,
@@ -131,12 +135,12 @@ export class AirThingsApi {
 				}
 				return token
 			})
-			.catch((error: any) => {
+			.catch((error: { message: string }) => {
 				throw this.getError(error)
 			})
 	}
 
-	private getError(error: Error): Error {
+	private getError(error: { message: string }): Error {
 		console.log(error)
 		return new Error(`airthings-api error: ${error.message}`)
 	}
