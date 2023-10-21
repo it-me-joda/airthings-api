@@ -1,6 +1,6 @@
 {
   "name": "airthings-api",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "repository": "git@github.com:josephbartley/airthings-api.git",
